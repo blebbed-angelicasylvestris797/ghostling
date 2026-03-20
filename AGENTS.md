@@ -12,3 +12,4 @@
 
 - C (not C++), single-file project in `main.c`
 - Never put side-effect calls inside `assert()` — removed in release builds
+- Comment heavily — explain *why*, not just *what*
