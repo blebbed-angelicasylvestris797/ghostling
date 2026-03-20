@@ -15,7 +15,7 @@ contexts.
 > terminal. It is a minimal viable terminal based on libghostty. Still,
 > it supports a lot more features than even the average terminal emulator!
 
-<video src="https://github.com/ghostty-org/ghostling/raw/refs/heads/main/demo.mp4" autoplay loop muted playsinline></video>
+![Ghostling Demo](demo.gif)
 
 ## What is Libghostty?
 
