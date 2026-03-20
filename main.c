@@ -7,6 +7,7 @@
 #include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
+#include <pwd.h>
 
 #if defined(__APPLE__)
 #include <util.h>
@@ -27,11 +28,16 @@ static const unsigned char font_jetbrains_mono[] = {
 // PTY helpers
 // ---------------------------------------------------------------------------
 
-// Spawn /bin/sh in a new pseudo-terminal.
+// Spawn the user's default shell in a new pseudo-terminal.
 //
 // Creates a pty pair via forkpty(), sets the initial window size, execs the
 // shell in the child, and puts the master fd into non-blocking mode so we
 // can poll it each frame without stalling the render loop.
+//
+// The shell is chosen by checking, in order:
+//   1. $SHELL environment variable
+//   2. The pw_shell field from the passwd database
+//   3. /bin/sh as a last resort
 //
 // Returns the master fd on success (>= 0) and stores the child pid in
 // *child_out.  Returns -1 on failure.
@@ -48,10 +54,26 @@ static int pty_spawn(pid_t *child_out, uint16_t cols, uint16_t rows)
         return -1;
     }
     if (child == 0) {
+        // Determine the user's preferred shell.  We try $SHELL first (the
+        // standard convention), then fall back to the passwd entry, and
+        // finally to /bin/sh if nothing else is available.
+        const char *shell = getenv("SHELL");
+        if (!shell || shell[0] == '\0') {
+            struct passwd *pw = getpwuid(getuid());
+            if (pw && pw->pw_shell && pw->pw_shell[0] != '\0')
+                shell = pw->pw_shell;
+            else
+                shell = "/bin/sh";
+        }
+
+        // Extract just the program name for argv[0] (e.g. "/bin/zsh" → "zsh").
+        const char *shell_name = strrchr(shell, '/');
+        shell_name = shell_name ? shell_name + 1 : shell;
+
         // Child process — replace ourselves with the shell.
         // TERM tells programs what escape sequences we understand.
         setenv("TERM", "xterm-256color", 1);
-        execl("/bin/sh", "sh", NULL);
+        execl(shell, shell_name, NULL);
         _exit(127); // execl only returns on error
     }
 
