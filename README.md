@@ -9,3 +9,20 @@ more functional terminals.
 >
 > The Ghostling terminal isn't meant to be a full featured, daily use
 > terminal. It is a minimal viable terminal based on libghostty.
+
+## Building
+
+Requires CMake 3.11+ and a C compiler. Raylib is fetched automatically
+via CMake's FetchContent if not already installed.
+
+```sh
+cmake -B build -G Ninja
+cmake --build build
+./build/ghostling
+```
+
+After the initial configure, you only need to run the build step:
+
+```sh
+cmake --build build
+```
