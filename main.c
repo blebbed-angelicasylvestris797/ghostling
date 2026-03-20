@@ -23,9 +23,27 @@ int main(void)
         ghostty_terminal_vt_write(terminal, (const uint8_t *)cmds[i], strlen(cmds[i]));
 
     InitWindow(800, 600, "ghostling");
+    SetWindowState(FLAG_WINDOW_RESIZABLE);
     SetTargetFPS(60);
 
+    int prev_width = GetScreenWidth();
+    int prev_height = GetScreenHeight();
+
     while (!WindowShouldClose()) {
+        if (IsWindowResized()) {
+            int w = GetScreenWidth();
+            int h = GetScreenHeight();
+            if (w != prev_width || h != prev_height) {
+                int cols = w / 10;  // approximate char width
+                int rows = h / 18; // line height from drawing code
+                if (cols < 1) cols = 1;
+                if (rows < 1) rows = 1;
+                ghostty_terminal_resize(terminal, (uint16_t)cols, (uint16_t)rows);
+                prev_width = w;
+                prev_height = h;
+            }
+        }
+
         BeginDrawing();
         ClearBackground(BLACK);
 
