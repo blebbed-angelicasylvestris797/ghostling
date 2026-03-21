@@ -930,82 +930,97 @@ int main(void)
     if (term_cols < 1) term_cols = 1;
     if (term_rows < 1) term_rows = 1;
 
+    // Initialize all resource handles to safe defaults so the cleanup
+    // label can free only what was successfully allocated.
+    GhosttyTerminal terminal = NULL;
+    pid_t child = -1;
+    int pty_fd = -1;
+    GhosttyKeyEncoder key_encoder = NULL;
+    GhosttyKeyEvent key_event = NULL;
+    GhosttyMouseEncoder mouse_encoder = NULL;
+    GhosttyMouseEvent mouse_event = NULL;
+    GhosttyRenderState render_state = NULL;
+    GhosttyRenderStateRowIterator row_iter = NULL;
+    GhosttyRenderStateRowCells row_cells = NULL;
+    int exit_code = 0;
+
     // Create a ghostty virtual terminal with the computed grid and 1000
     // lines of scrollback.  This holds all the parsed screen state (cells,
     // cursor, styles, modes) but knows nothing about the pty or the window.
-    GhosttyTerminal terminal;
     GhosttyTerminalOptions opts = { .cols = term_cols, .rows = term_rows, .max_scrollback = 1000 };
     GhosttyResult err = ghostty_terminal_new(NULL, &terminal, opts);
     if (err != GHOSTTY_SUCCESS) {
         fprintf(stderr, "ghostty_terminal_new failed (%d)\n", err);
-        return 1;
+        exit_code = 1;
+        goto cleanup;
     }
 
     // Spawn a child shell connected to a pseudo-terminal.  The master fd
     // is what we read/write; the child's stdin/stdout/stderr are wired to
     // the slave side.
-    pid_t child;
-    int pty_fd = pty_spawn(&child, term_cols, term_rows);
-    if (pty_fd < 0)
-        return 1;
+    pty_fd = pty_spawn(&child, term_cols, term_rows);
+    if (pty_fd < 0) {
+        exit_code = 1;
+        goto cleanup;
+    }
 
     // Create the key encoder and a reusable key event for input handling.
     // The encoder translates key events into the correct VT escape
     // sequences, respecting terminal modes like application cursor keys
     // and the Kitty keyboard protocol.
-    GhosttyKeyEncoder key_encoder = NULL;
     err = ghostty_key_encoder_new(NULL, &key_encoder);
     if (err != GHOSTTY_SUCCESS) {
         fprintf(stderr, "ghostty_key_encoder_new failed (%d)\n", err);
-        return 1;
+        exit_code = 1;
+        goto cleanup;
     }
 
-    GhosttyKeyEvent key_event = NULL;
     err = ghostty_key_event_new(NULL, &key_event);
     if (err != GHOSTTY_SUCCESS) {
         fprintf(stderr, "ghostty_key_event_new failed (%d)\n", err);
-        return 1;
+        exit_code = 1;
+        goto cleanup;
     }
 
     // Create the mouse encoder and a reusable mouse event for input
     // handling.  The encoder translates mouse events into the correct
     // VT escape sequences, respecting terminal modes like SGR mouse
     // reporting and tracking mode (normal, button, any-event).
-    GhosttyMouseEncoder mouse_encoder = NULL;
     err = ghostty_mouse_encoder_new(NULL, &mouse_encoder);
     if (err != GHOSTTY_SUCCESS) {
         fprintf(stderr, "ghostty_mouse_encoder_new failed (%d)\n", err);
-        return 1;
+        exit_code = 1;
+        goto cleanup;
     }
 
-    GhosttyMouseEvent mouse_event = NULL;
     err = ghostty_mouse_event_new(NULL, &mouse_event);
     if (err != GHOSTTY_SUCCESS) {
         fprintf(stderr, "ghostty_mouse_event_new failed (%d)\n", err);
-        return 1;
+        exit_code = 1;
+        goto cleanup;
     }
 
     // Create the render state and its reusable iterator/cells handles once
     // up front.  These are updated each frame rather than recreated.
-    GhosttyRenderState render_state = NULL;
     err = ghostty_render_state_new(NULL, &render_state);
     if (err != GHOSTTY_SUCCESS) {
         fprintf(stderr, "ghostty_render_state_new failed (%d)\n", err);
-        return 1;
+        exit_code = 1;
+        goto cleanup;
     }
 
-    GhosttyRenderStateRowIterator row_iter = NULL;
     err = ghostty_render_state_row_iterator_new(NULL, &row_iter);
     if (err != GHOSTTY_SUCCESS) {
         fprintf(stderr, "ghostty_render_state_row_iterator_new failed (%d)\n", err);
-        return 1;
+        exit_code = 1;
+        goto cleanup;
     }
 
-    GhosttyRenderStateRowCells row_cells = NULL;
     err = ghostty_render_state_row_cells_new(NULL, &row_cells);
     if (err != GHOSTTY_SUCCESS) {
         fprintf(stderr, "ghostty_render_state_row_cells_new failed (%d)\n", err);
-        return 1;
+        exit_code = 1;
+        goto cleanup;
     }
 
     // Track window size so we only recalculate the grid on actual changes.
@@ -1164,24 +1179,25 @@ int main(void)
         EndDrawing();
     }
 
-    // Cleanup
+cleanup:
     UnloadFont(mono_font);
     CloseWindow();
-    close(pty_fd);
-    if (!child_reaped) {
+    if (pty_fd >= 0)
+        close(pty_fd);
+    if (child > 0 && !child_reaped) {
         // If the child is still running, ask it to exit.  Then do a
         // blocking waitpid to reap it and avoid leaving a zombie.
         if (!child_exited)
             kill(child, SIGHUP);
         waitpid(child, NULL, 0);
     }
-    ghostty_mouse_event_free(mouse_event);
-    ghostty_mouse_encoder_free(mouse_encoder);
-    ghostty_key_event_free(key_event);
-    ghostty_key_encoder_free(key_encoder);
-    ghostty_render_state_row_cells_free(row_cells);
-    ghostty_render_state_row_iterator_free(row_iter);
-    ghostty_render_state_free(render_state);
-    ghostty_terminal_free(terminal);
-    return 0;
+    if (mouse_event)    ghostty_mouse_event_free(mouse_event);
+    if (mouse_encoder)  ghostty_mouse_encoder_free(mouse_encoder);
+    if (key_event)      ghostty_key_event_free(key_event);
+    if (key_encoder)    ghostty_key_encoder_free(key_encoder);
+    if (row_cells)      ghostty_render_state_row_cells_free(row_cells);
+    if (row_iter)       ghostty_render_state_row_iterator_free(row_iter);
+    if (render_state)   ghostty_render_state_free(render_state);
+    if (terminal)       ghostty_terminal_free(terminal);
+    return exit_code;
 }
