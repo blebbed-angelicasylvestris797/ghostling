@@ -85,6 +85,27 @@ static int pty_spawn(pid_t *child_out, uint16_t cols, uint16_t rows)
     return pty_fd;
 }
 
+// Best-effort write to the pty master fd.  Because the fd is
+// non-blocking, write() may return short or fail with EAGAIN.  We
+// retry on EINTR, advance past partial writes, and silently drop
+// data if the kernel buffer is full (EAGAIN) — this matches what
+// most terminal emulators do under back-pressure.
+static void pty_write(int pty_fd, const char *buf, size_t len)
+{
+    while (len > 0) {
+        ssize_t n = write(pty_fd, buf, len);
+        if (n > 0) {
+            buf += n;
+            len -= (size_t)n;
+        } else if (n < 0) {
+            if (errno == EINTR)
+                continue;
+            // EAGAIN or real error — drop the remainder.
+            break;
+        }
+    }
+}
+
 // Result of draining the pty master fd.
 typedef enum {
     PTY_READ_OK,    // data was drained (or EAGAIN, i.e. nothing available right now)
@@ -264,7 +285,7 @@ static void mouse_encode_and_write(int pty_fd, GhosttyMouseEncoder encoder,
     GhosttyResult res = ghostty_mouse_encoder_encode(
         encoder, event, buf, sizeof(buf), &written);
     if (res == GHOSTTY_SUCCESS && written > 0)
-        write(pty_fd, buf, written);
+        pty_write(pty_fd, buf, written);
 }
 
 // Poll raylib for mouse events and use the libghostty mouse encoder
@@ -512,7 +533,7 @@ static void handle_input(int pty_fd, GhosttyKeyEncoder encoder,
         GhosttyResult res = ghostty_key_encoder_encode(
             encoder, event, buf, sizeof(buf), &written);
         if (res == GHOSTTY_SUCCESS && written > 0)
-            write(pty_fd, buf, written);
+            pty_write(pty_fd, buf, written);
     }
 }
 
@@ -1030,7 +1051,7 @@ int main(void)
                 GhosttyResult focus_res = ghostty_focus_encode(
                     focus_event, focus_buf, sizeof(focus_buf), &focus_written);
                 if (focus_res == GHOSTTY_SUCCESS && focus_written > 0)
-                    write(pty_fd, focus_buf, focus_written);
+                    pty_write(pty_fd, focus_buf, focus_written);
             }
             prev_focused = focused;
         }
