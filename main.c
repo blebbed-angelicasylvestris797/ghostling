@@ -86,21 +86,36 @@ static int pty_spawn(pid_t *child_out, uint16_t cols, uint16_t rows)
     return pty_fd;
 }
 
+// Result of draining the pty master fd.
+typedef enum {
+    PTY_READ_OK,    // data was drained (or EAGAIN, i.e. nothing available right now)
+    PTY_READ_EOF,   // the child closed its end of the pty
+    PTY_READ_ERROR, // a real read error occurred
+} PtyReadResult;
+
 // Drain all available output from the pty master and feed it into the
 // ghostty terminal.  The terminal's VT parser will process any escape
 // sequences and update its internal screen/cursor/style state.
 //
 // Because the fd is non-blocking, read() returns -1 with EAGAIN once
 // the kernel buffer is empty, at which point we stop.
-static void pty_read(int pty_fd, GhosttyTerminal terminal)
+static PtyReadResult pty_read(int pty_fd, GhosttyTerminal terminal)
 {
     uint8_t buf[4096];
     for (;;) {
         ssize_t n = read(pty_fd, buf, sizeof(buf));
-        if (n > 0)
+        if (n > 0) {
             ghostty_terminal_vt_write(terminal, buf, (size_t)n);
-        else
-            break;
+        } else if (n == 0) {
+            // EOF — the child closed its side of the pty.
+            return PTY_READ_EOF;
+        } else {
+            // n == -1: distinguish "no data right now" from real errors.
+            if (errno == EAGAIN || errno == EINTR)
+                return PTY_READ_OK;
+            perror("pty read");
+            return PTY_READ_ERROR;
+        }
     }
 }
 
@@ -945,6 +960,10 @@ int main(void)
     // scrollbar thumb we continuously reposition the viewport.
     bool scrollbar_dragging = false;
 
+    // Set when the child process has exited (EOF on the pty).
+    bool child_exited = false;
+    int child_exit_status = -1;
+
     // Each frame: handle resize → read pty → process input → render.
     while (!WindowShouldClose()) {
         // Recalculate grid dimensions when the window is resized.
@@ -986,14 +1005,26 @@ int main(void)
         }
 
         // Drain any pending output from the shell and update terminal state.
-        pty_read(pty_fd, terminal);
+        // Once the child has exited we stop reading — the fd may be closed.
+        if (!child_exited) {
+            PtyReadResult pty_rc = pty_read(pty_fd, terminal);
+            if (pty_rc != PTY_READ_OK) {
+                // EOF (1) or error (-1): the child is gone.
+                child_exited = true;
 
-        // Forward keyboard input to the shell.
-        handle_input(pty_fd, key_encoder, key_event, terminal);
+                // Reap the child so we can report its exit status.
+                int wstatus = 0;
+                if (waitpid(child, &wstatus, WNOHANG) > 0 && WIFEXITED(wstatus))
+                    child_exit_status = WEXITSTATUS(wstatus);
+            }
+        }
 
-        // Forward mouse input to the shell.
-        handle_mouse(pty_fd, mouse_encoder, mouse_event, terminal,
-                     cell_width, cell_height, pad);
+        // Forward keyboard/mouse input only while the child is alive.
+        if (!child_exited) {
+            handle_input(pty_fd, key_encoder, key_event, terminal);
+            handle_mouse(pty_fd, mouse_encoder, mouse_event, terminal,
+                         cell_width, cell_height, pad);
+        }
 
         // Handle scrollbar drag-to-scroll before snapshotting so the
         // render state reflects any scroll position changes this frame.
@@ -1022,6 +1053,29 @@ int main(void)
         render_terminal(render_state, row_iter, row_cells, mono_font,
                         cell_width, cell_height, font_size,
                         scrollbar_ptr);
+
+        // Show a banner when the child process has exited so the user
+        // knows the shell is gone (they can still scroll / inspect output).
+        if (child_exited) {
+            char exit_msg[128];
+            if (child_exit_status >= 0)
+                snprintf(exit_msg, sizeof(exit_msg),
+                         "[process exited with status %d]", child_exit_status);
+            else
+                snprintf(exit_msg, sizeof(exit_msg), "[process exited]");
+
+            Vector2 msg_size = MeasureTextEx(mono_font, exit_msg, font_size, 0);
+            int screen_w = GetScreenWidth();
+            int screen_h = GetScreenHeight();
+            int banner_h = (int)msg_size.y + 8;
+            DrawRectangle(0, screen_h - banner_h, screen_w, banner_h,
+                          (Color){0, 0, 0, 180});
+            DrawTextEx(mono_font, exit_msg,
+                       (Vector2){(screen_w - msg_size.x) / 2,
+                                 screen_h - banner_h + 4},
+                       font_size, 0, WHITE);
+        }
+
         EndDrawing();
     }
 
@@ -1029,8 +1083,10 @@ int main(void)
     UnloadFont(mono_font);
     CloseWindow();
     close(pty_fd);
-    kill(child, SIGHUP);    // signal the child shell to exit
-    waitpid(child, NULL, 0); // reap the child to avoid a zombie
+    if (!child_exited) {
+        kill(child, SIGHUP);    // signal the child shell to exit
+        waitpid(child, NULL, 0); // reap the child to avoid a zombie
+    }
     ghostty_mouse_event_free(mouse_event);
     ghostty_mouse_encoder_free(mouse_encoder);
     ghostty_key_event_free(key_event);
