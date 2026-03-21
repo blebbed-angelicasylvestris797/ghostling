@@ -200,9 +200,8 @@ static uint32_t raylib_key_unshifted_codepoint(int rl_key)
 }
 
 // Encode a single Unicode codepoint into a UTF-8 byte buffer.
-// Returns the number of bytes written (1–4).  Used by handle_input to
-// supply the event's UTF-8 text from GetCharPressed().
-static int input_utf8_encode(int cp, char out[4])
+// Returns the number of bytes written (1–4).
+static int utf8_encode(uint32_t cp, char out[4])
 {
     if (cp < 0x80) {
         out[0] = (char)cp;
@@ -413,7 +412,7 @@ static void handle_input(int pty_fd, GhosttyKeyEncoder encoder,
     int ch;
     while ((ch = GetCharPressed()) != 0) {
         char u8[4];
-        int n = input_utf8_encode(ch, u8);
+        int n = utf8_encode(ch, u8);
         if (char_utf8_len + n < (int)sizeof(char_utf8)) {
             memcpy(&char_utf8[char_utf8_len], u8, n);
             char_utf8_len += n;
@@ -582,31 +581,6 @@ static GhosttyColorRgb resolve_color(GhosttyStyleColor color,
     case GHOSTTY_STYLE_COLOR_RGB:     return color.value.rgb;
     case GHOSTTY_STYLE_COLOR_PALETTE: return colors->palette[color.value.palette];
     default:                          return fallback;
-    }
-}
-
-// Encode a single Unicode codepoint into a UTF-8 byte buffer.
-// Returns the number of bytes written (1–4).
-static int utf8_encode(uint32_t cp, char out[4])
-{
-    if (cp < 0x80) {
-        out[0] = (char)cp;
-        return 1;
-    } else if (cp < 0x800) {
-        out[0] = (char)(0xC0 | (cp >> 6));
-        out[1] = (char)(0x80 | (cp & 0x3F));
-        return 2;
-    } else if (cp < 0x10000) {
-        out[0] = (char)(0xE0 | (cp >> 12));
-        out[1] = (char)(0x80 | ((cp >> 6) & 0x3F));
-        out[2] = (char)(0x80 | (cp & 0x3F));
-        return 3;
-    } else {
-        out[0] = (char)(0xF0 | (cp >> 18));
-        out[1] = (char)(0x80 | ((cp >> 12) & 0x3F));
-        out[2] = (char)(0x80 | ((cp >> 6) & 0x3F));
-        out[3] = (char)(0x80 | (cp & 0x3F));
-        return 4;
     }
 }
 
