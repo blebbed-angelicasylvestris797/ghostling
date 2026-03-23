@@ -246,8 +246,19 @@ static uint32_t raylib_key_unshifted_codepoint(int rl_key)
 
 // Encode a single Unicode codepoint into a UTF-8 byte buffer.
 // Returns the number of bytes written (1–4).
+// Invalid codepoints (> U+10FFFF) are replaced with U+FFFD.
 static int utf8_encode(uint32_t cp, char out[4])
 {
+    // Unicode defines the maximum valid codepoint as U+10FFFF.
+    // Codepoints above this value are invalid and should be replaced
+    // with the Unicode replacement character U+FFFD.
+    const uint32_t MAX_UNICODE = 0x10FFFF;
+    const uint32_t REPLACEMENT_CHAR = 0xFFFD;
+
+    if (cp > MAX_UNICODE) {
+        cp = REPLACEMENT_CHAR;
+    }
+
     if (cp < 0x80) {
         out[0] = (char)cp;
         return 1;
