@@ -13,3 +13,8 @@
 - C (not C++), single-file project in `main.c`
 - Never put side-effect calls inside `assert()` — removed in release builds
 - Comment heavily — explain *why*, not just *what*
+
+## Updating Libghostty
+
+- Update CMakeLists.txt first to point to the new version
+- Clean the build folder immediately to avoid stale libghostty builds

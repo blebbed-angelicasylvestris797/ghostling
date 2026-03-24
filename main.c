@@ -40,10 +40,16 @@
 //
 // Returns the master fd on success (>= 0) and stores the child pid in
 // *child_out.  Returns -1 on failure.
-static int pty_spawn(pid_t *child_out, uint16_t cols, uint16_t rows)
+static int pty_spawn(pid_t *child_out, uint16_t cols, uint16_t rows,
+                     int cell_width, int cell_height)
 {
     int pty_fd;
-    struct winsize ws = { .ws_row = rows, .ws_col = cols };
+    struct winsize ws = {
+        .ws_row = rows,
+        .ws_col = cols,
+        .ws_xpixel = (unsigned short)(cols * cell_width),
+        .ws_ypixel = (unsigned short)(rows * cell_height),
+    };
 
     // forkpty() combines openpty + fork + login_tty into one call.
     // In the child it sets up the slave side as stdin/stdout/stderr.
@@ -1050,7 +1056,7 @@ int main(void)
     // Spawn a child shell connected to a pseudo-terminal.  The master fd
     // is what we read/write; the child's stdin/stdout/stderr are wired to
     // the slave side.
-    pty_fd = pty_spawn(&child, term_cols, term_rows);
+    pty_fd = pty_spawn(&child, term_cols, term_rows, cell_width, cell_height);
     if (pty_fd < 0) {
         exit_code = 1;
         goto cleanup;
@@ -1183,7 +1189,12 @@ int main(void)
                 // report the current geometry.
                 effects_ctx.cols = term_cols;
                 effects_ctx.rows = term_rows;
-                struct winsize new_ws = { .ws_row = term_rows, .ws_col = term_cols };
+                struct winsize new_ws = {
+                    .ws_row = term_rows,
+                    .ws_col = term_cols,
+                    .ws_xpixel = (unsigned short)(term_cols * cell_width),
+                    .ws_ypixel = (unsigned short)(term_rows * cell_height),
+                };
                 ioctl(pty_fd, TIOCSWINSZ, &new_ws);
                 prev_width = w;
                 prev_height = h;
